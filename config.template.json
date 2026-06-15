@@ -1,0 +1,17 @@
+{
+  "supabase_url": "YOUR_SUPABASE_URL",
+  "supabase_admin_token": "YOUR_ADMIN_TOKEN",
+  "brave_api_key": "YOUR_BRAVE_KEY",
+  "eia_api_key": "YOUR_EIA_KEY",
+  "gemini_api_key": "YOUR_GEMINI_KEY",
+  "twelve_data_api_key": "YOUR_TWELVE_DATA_KEY",
+  "alpha_vantage_api_key": null,
+  "dry_run": true,
+  "ollama_cloud": {
+    "base_url": "https://ollama.com",
+    "api_key": "YOUR_OLLAMA_CLOUD_KEY",
+    "model": "glm-5.1:cloud",
+    "api_endpoint": "/api/chat",
+    "auth_header": "Authorization: Bearer"
+  }
+}

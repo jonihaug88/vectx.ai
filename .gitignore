@@ -1,0 +1,7 @@
+node_modules/
+config.json
+*.db
+.DS_Store
+dist/
+.env
+vectx.db
