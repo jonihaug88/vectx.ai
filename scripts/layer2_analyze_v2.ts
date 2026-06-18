@@ -96,7 +96,7 @@ async function getAsset(assetId: string): Promise<Asset | null> {
 }
 
 async function getDrivers(assetId: string): Promise<Driver[]> {
-  return runSql<Driver>(`SELECT id, driver_name, act_weighting, description, supply_or_demand FROM central.drivers WHERE asset_id = '${assetId}' ORDER BY act_weighting DESC NULLS LAST`);
+  return runSql<Driver>(`SELECT id, driver_name, act_weighting, description, supply_or_demand FROM central.drivers WHERE asset_id = '${assetId}' AND active = TRUE ORDER BY act_weighting DESC NULLS LAST`);
 }
 
 async function getEvents(assetId: string): Promise<(Event & { driver_weighting: number })[]> {
@@ -105,8 +105,9 @@ async function getEvents(assetId: string): Promise<(Event & { driver_weighting: 
            e.timeline_score, e.driver_name, e.supply_or_demand, e.quantitative_or_qualitative,
            e.created_at, COALESCE(d.act_weighting, 0) as driver_weighting
     FROM central.events e
-    LEFT JOIN central.drivers d ON d.asset_id = e.asset_id AND d.driver_name = e.driver_name
+    LEFT JOIN central.drivers d ON d.asset_id = e.asset_id AND d.driver_name = e.driver_name AND d.active = TRUE
     WHERE e.asset_id = '${assetId}'
+      AND e.headline IS NOT NULL AND e.headline != ''
     ORDER BY e.created_at DESC
     LIMIT 15
   `;
@@ -119,7 +120,7 @@ async function getFutureEvents(assetId: string): Promise<(FutureEvent & { driver
            f.probability, f.timeline_score, f.driver_name, f.supply_or_demand,
            COALESCE(d.act_weighting, 0) as driver_weighting
     FROM central.future_events f
-    LEFT JOIN central.drivers d ON d.asset_id = f.asset_id AND d.driver_name = f.driver_name
+    LEFT JOIN central.drivers d ON d.asset_id = f.asset_id AND d.driver_name = f.driver_name AND d.active = TRUE
     WHERE f.asset_id = '${assetId}'
     AND f.created_at >= NOW() - INTERVAL '48 hours'
     ORDER BY f.probability DESC, f.impact_score DESC

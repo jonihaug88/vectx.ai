@@ -116,7 +116,7 @@ async function getDrivers(assetId: string): Promise<Driver[]> {
     SELECT id::text, asset_id::text, driver_name, class, description, supply_or_demand,
            quantitative_or_qualitative, impact_score, act_weighting
     FROM central.drivers
-    WHERE asset_id = '${assetId}'
+    WHERE asset_id = '${assetId}' AND active = TRUE
     ORDER BY driver_name
   `;
   return runSql<Driver>(query);
@@ -180,6 +180,7 @@ async function updateDriverWeightings(
     UPDATE central.drivers d
     SET act_weighting = ${MIN_WEIGHT}, last_analysis = NOW()
     WHERE d.asset_id = '${assetId}'
+      AND d.active = TRUE
       AND d.act_weighting IS NULL
       AND EXISTS (
         SELECT 1 FROM central.drivers_events de
@@ -197,7 +198,7 @@ async function updateDriverWeightings(
   const totalResult = await runSql<{ total: string }>(`
     SELECT SUM(CAST(act_weighting AS FLOAT))::text as total
     FROM central.drivers
-    WHERE asset_id = '${assetId}' AND act_weighting IS NOT NULL
+    WHERE asset_id = '${assetId}' AND act_weighting IS NOT NULL AND active = TRUE
   `);
   const totalWeight = parseFloat(totalResult[0]?.total || '0');
 
@@ -207,14 +208,14 @@ async function updateDriverWeightings(
     await runSql(`
       UPDATE central.drivers
       SET act_weighting = ROUND(CAST(act_weighting AS FLOAT) * ${scale} * 10000) / 10000
-      WHERE asset_id = '${assetId}' AND act_weighting IS NOT NULL
+      WHERE asset_id = '${assetId}' AND act_weighting IS NOT NULL AND active = TRUE
     `);
 
     // Fix rounding: adjust the largest-weighted driver to make sum exactly 1.0
     const recountResult = await runSql<{ total: string }>(`
       SELECT SUM(CAST(act_weighting AS FLOAT))::text as total
       FROM central.drivers
-      WHERE asset_id = '${assetId}' AND act_weighting IS NOT NULL
+      WHERE asset_id = '${assetId}' AND act_weighting IS NOT NULL AND active = TRUE
     `);
     const recountWeight = parseFloat(recountResult[0]?.total || '0');
     const diff = Math.round((1.0 - recountWeight) * 10000) / 10000;
@@ -225,7 +226,7 @@ async function updateDriverWeightings(
         WHERE asset_id = '${assetId}'
           AND id = (
             SELECT id FROM central.drivers
-            WHERE asset_id = '${assetId}' AND act_weighting IS NOT NULL
+            WHERE asset_id = '${assetId}' AND act_weighting IS NOT NULL AND active = TRUE
             ORDER BY CAST(act_weighting AS FLOAT) DESC LIMIT 1
           )
       `);

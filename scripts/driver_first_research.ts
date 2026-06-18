@@ -1,7 +1,7 @@
 /**
  * VECTX V3 — Driver-First Research (Phase 1, Shadow Mode)
  * 
- * Isolated parallel operation for 3 test assets (ZS, EURUSD, GC).
+ * Isolated parallel operation for 5 test assets (ZS, EURUSD, GC, WTI, HG).
  * Researches events BY DRIVER (not by RSS feed), using Gemini google_search grounding.
  * Writes ONLY to central.driver_first_shadow_events — does NOT touch production tables.
  */
@@ -23,7 +23,7 @@ const GEMINI_API_KEY = config.gemini_api_key;
 
 // ─── Config ────────────────────────────────────────────────────────
 
-const TEST_ASSETS = ['ZS', 'EURUSD', 'GC'];
+const TEST_ASSETS = ['ZS', 'EURUSD', 'GC', 'WTI', 'HG'];
 const CALL_TIMEOUT_MS = 120_000; // per-call timeout (2 min)
 const JOB_LOCK_NAME = 'driver_first_research';
 const JOB_LOCK_STALE_MIN = 25;
@@ -237,7 +237,7 @@ async function loadDrivers(assetId: string): Promise<Driver[]> {
   return runSql<Driver[]>(`
     SELECT id, driver_name, act_weighting, supply_or_demand, description
     FROM central.drivers
-    WHERE asset_id = '${assetId}'
+    WHERE asset_id = '${assetId}' AND active = TRUE
     ORDER BY act_weighting DESC
   `);
 }
