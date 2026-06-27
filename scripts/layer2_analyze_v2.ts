@@ -100,6 +100,13 @@ async function getDrivers(assetId: string): Promise<Driver[]> {
 }
 
 async function getEvents(assetId: string): Promise<(Event & { driver_weighting: number })[]> {
+  // EVENT_SOURCE filter: when set to 'driver_first', L2 only processes DF events
+  // This prevents mixing old RSS events with new DF events
+  // Activate once all 20 assets have DF coverage (confirmed 2026-06-22: 20/20 ✅)
+  const eventSourceFilter = process.env.EVENT_SOURCE === 'driver_first'
+    ? `AND e.source_method = 'driver_first'`
+    : '';
+
   const query = `
     SELECT e.id, e.event_type, e.headline, e.summary, e.impact_score, e.sentiment_score,
            e.timeline_score, e.driver_name, e.supply_or_demand, e.quantitative_or_qualitative,
@@ -108,6 +115,7 @@ async function getEvents(assetId: string): Promise<(Event & { driver_weighting: 
     LEFT JOIN central.drivers d ON d.asset_id = e.asset_id AND d.driver_name = e.driver_name AND d.active = TRUE
     WHERE e.asset_id = '${assetId}'
       AND e.headline IS NOT NULL AND e.headline != ''
+      ${eventSourceFilter}
     ORDER BY e.created_at DESC
     LIMIT 15
   `;

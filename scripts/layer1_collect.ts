@@ -8,9 +8,13 @@
 
 import RSSParser from 'rss-parser';
 
-// Config
-const SUPABASE_URL = 'https://umjerckgospmifikdrli.supabase.co';
-const ADMIN_TOKEN = 'dndhbhdn9848nd9834nd';
+// Config — load from config.json (never hardcode secrets)
+import { readFileSync } from 'fs';
+import { join } from 'path';
+const configPath = join(import.meta.dir || '.', '..', 'config.json');
+const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+const SUPABASE_URL = config.supabase_url;
+const ADMIN_TOKEN = config.supabase_admin_token;
 
 const rssParser = new RSSParser({
   timeout: 30000,

@@ -350,7 +350,7 @@ async function logL3Run(
         (asset_id, asset_name, llm_model, llm_latency_ms, success, 
          tokens_input, tokens_output, tokens_thinking, estimated_cost_usd, error_message)
       VALUES 
-        ('${assetId}', '${assetName.replace(/'/g, "''")}', 'gemini-2.5-flash', ${latencyMs}, ${success},
+        ('${assetId}', '${assetName.replace(/'/g, "''")}', '${process.env.L3_MODEL || 'gemini-2.5-pro'}', ${latencyMs}, ${success},
          ${result?.tokens_input ?? 'NULL'}, ${result?.tokens_output ?? 'NULL'}, ${result?.tokens_thinking ?? 'NULL'}, ${result?.estimated_cost_usd ?? 'NULL'},
          ${result?.error_detail ? `'${result.error_detail.replace(/'/g, "''").slice(0, 500)}'` : 'NULL'})
     `);
@@ -777,7 +777,7 @@ async function processAssetsConcurrently(
 async function analyze() {
   console.log('=== VECTX V3 - Layer 3 Analyze ===');
   console.log(`Started at: ${new Date().toISOString()}`);
-  console.log(`Model: gemini-2.5-flash`);
+  console.log(`Model: ${process.env.L3_MODEL || 'gemini-2.5-pro'}`);
   console.log(`Dry Run: ${DRY_RUN ? '✅ ENABLED (paper_trades)' : '⚠️ LIVE MODE (trades)'}`);
   console.log(`Concurrency: ${CONCURRENCY_LIMIT}`);
   console.log('');

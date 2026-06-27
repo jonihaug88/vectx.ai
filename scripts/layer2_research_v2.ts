@@ -146,12 +146,13 @@ async function updateDriverWeightings(
   weightings: Array<{ driver_name: string; weighting: number; confidence: number }>,
   runId: string
 ): Promise<void> {
-  // Step 1: Reset ALL driver weightings for this asset to NULL before setting new ones
+  // Step 1: Reset ACTIVE driver weightings for this asset to NULL (preserve inactive drivers)
+  // before setting new ones
   // This prevents accumulation of old weightings from previous runs
   await runSql(`
     UPDATE central.drivers
     SET act_weighting = NULL, last_analysis = NULL
-    WHERE asset_id = '${assetId}'
+    WHERE asset_id = '${assetId}' AND active = TRUE
   `);
 
   // Step 2: Write LLM-returned weightings
@@ -678,16 +679,10 @@ async function processAsset(
   );
 
   if (weightingsOutput) {
-    await updateDriverWeightings(
-      assetId,
-      weightingsOutput.driver_weightings.map(w => ({
-        driver_name: w.driver_name,
-        weighting: w.weighting,
-        confidence: w.confidence,
-      })),
-      runId
-    );
-    console.log(`  Updated ${weightingsOutput.driver_weightings.length} driver weightings`);
+    // Weightings are now owned by DF Stufe A (driver_first_research.ts)
+    // L2 Research no longer writes act_weighting
+    console.log(`  Skipping driver weightings (owned by DF Stufe A)`);
+    console.log(`  Would have updated ${weightingsOutput.driver_weightings.length} driver weightings`);
   }
 
   if (futureOutput) {

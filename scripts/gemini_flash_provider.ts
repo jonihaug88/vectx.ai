@@ -89,7 +89,9 @@ export async function callGeminiFlashL3(
   const controller = new AbortController();
   const to = setTimeout(() => controller.abort(), timeout_ms);
 
-  const url = `${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const L3_MODEL = process.env.L3_MODEL || 'gemini-2.5-pro';
+
+  const url = `${GEMINI_API_BASE}/${L3_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
 
   try {
     const response = await fetch(url, {
@@ -107,10 +109,11 @@ export async function callGeminiFlashL3(
           temperature,
           maxOutputTokens: max_output_tokens,
           responseMimeType: "application/json",
-          // Disable internal thinking to preserve output budget
-          thinkingConfig: {
-            thinkingBudget: 0,
-          },
+          // gemini-2.5-pro requires thinking mode (budget > 0)
+          // gemini-2.5-flash works with thinking disabled (budget = 0)
+          ...(L3_MODEL.includes('pro')
+            ? { thinkingConfig: { thinkingBudget: 8192 } }
+            : { thinkingConfig: { thinkingBudget: 0 } }),
         },
         safetySettings: [
           { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
