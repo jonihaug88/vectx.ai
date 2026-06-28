@@ -271,6 +271,9 @@ for ticker in tickers:
     # Determine start point: only compute weeks after existing data
     last_existing = existing_map.get(ticker, '2000-01-01')
     last_dt = pd.Timestamp(last_existing) + pd.Timedelta(days=1)
+    # Ensure both are tz-naive for comparison
+    if last_dt.tzinfo is not None:
+        last_dt = last_dt.tz_localize(None)
     
     # Find indices after last_existing
     start_idx = max(ROLLING_WINDOW, 0)
@@ -281,7 +284,9 @@ for ticker in tickers:
     
     for end_idx in range(ROLLING_WINDOW, len(merged), WEEKLY_STEP):
         date_t = merged.index[end_idx]
-        if date_t > last_dt:
+        # Ensure tz-naive for comparison
+        date_compare = date_t.tz_localize(None) if date_t.tzinfo is not None else date_t
+        if date_compare > last_dt:
             indices_to_compute.append(end_idx)
     
     if len(indices_to_compute) == 0:
@@ -360,7 +365,9 @@ for ticker in tickers:
             values = ',\n'.join([
                 f"('{r['ticker']}', '{r['observation_d']}', {r['current_price']}, {r['baseline']}, "
                 f"{r['adjust']}, {r['vreal']}, {r['sigma']}, {r['band_low']}, {r['band_high']}, "
-                f"{r['confidence']}, '{r['model_version']}', '{r['components'].replace(\"'\", \"''\")}')"
+                f"{r['confidence']}, '{r['model_version']}', $$"
+                + r['components'].replace("'", "''")
+                + "$$)"
                 for r in batch
             ])
             run_sql(f"""
