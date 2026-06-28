@@ -29,7 +29,9 @@ function getSupabaseClient() {
 
 async function getSecret(name: string): Promise<string> {
   const sb = getSupabaseClient()
+  // Must target central schema — secrets live in central.edge_secrets, not public
   const { data, error } = await sb
+    .schema('central')
     .from('edge_secrets')
     .select('value')
     .eq('name', name)
@@ -74,8 +76,9 @@ async function processAsset(
   const assetId = asset.id
   const ticker = asset.ticker
 
-  // 1. Active drivers
+  // 1. Active drivers (central schema)
   const { data: drivers, error: dErr } = await sb
+    .schema('central')
     .from('drivers')
     .select('id, driver_name, act_weighting, description, supply_or_demand')
     .eq('asset_id', assetId)
@@ -86,9 +89,10 @@ async function processAsset(
     return { success: false, error: dErr?.message || 'No active drivers' }
   }
 
-  // 2. Recent events (last 7 days)
+  // 2. Recent events (last 7 days, central schema)
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString()
   const { data: events } = await sb
+    .schema('central')
     .from('drivers_events')
     .select('headline, driver_id')
     .gte('created_at', weekAgo)
@@ -183,7 +187,7 @@ OUTPUT FORMAT (JSON only):
     }
   })
 
-  // 6. Write to driver_weighting_history (shadow — NOT drivers.act_weighting)
+  // 6. Write to driver_weighting_history (shadow — NOT drivers.act_weighting, central schema)
   const runId = crypto.randomUUID()
   const rows = Array.from(normalized.entries()).map(([name, weight]) => {
     const driver = driverMap.get(name)!
@@ -204,6 +208,7 @@ OUTPUT FORMAT (JSON only):
   })
 
   const { error: insertErr } = await sb
+    .schema('central')
     .from('driver_weighting_history')
     .insert(rows)
 
@@ -234,9 +239,9 @@ serve(async (req: Request) => {
   const body = await req.json().catch(() => ({}))
   const tickers = body.tickers || null
 
-  // Get assets
+  // Get assets (central schema)
   const sb = getSupabaseClient()
-  let query = sb.from('assets').select('id, ticker, asset_name').order('ticker')
+  let query = sb.schema('central').from('assets').select('id, ticker, asset_name').order('ticker')
   if (tickers && Array.isArray(tickers) && tickers.length > 0) {
     query = query.in('ticker', tickers)
   }
