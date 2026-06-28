@@ -1,0 +1,5 @@
+[project]
+id = "umjerckgospmifikdrli"
+
+[functions.driver-weighting-stufe-a]
+verify_jwt = false
