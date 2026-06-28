@@ -69,7 +69,7 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
 // ─── Main Logic ─────────────────────────────────────────────────────
 
 async function processAsset(
-  asset: { id: string; ticker: string; asset_name?: string },
+  asset: { id: string; ticker: string; name?: string },
   apiKey: string
 ): Promise<{ success: boolean; error?: string; weightCount?: number }> {
   const sb = getSupabaseClient()
@@ -241,7 +241,7 @@ serve(async (req: Request) => {
 
   // Get assets (central schema)
   const sb = getSupabaseClient()
-  let query = sb.schema('central').from('assets').select('id, ticker, asset_name').order('ticker')
+  let query = sb.schema('central').from('assets').select('id, ticker, name').order('ticker')
   if (tickers && Array.isArray(tickers) && tickers.length > 0) {
     query = query.in('ticker', tickers)
   }
